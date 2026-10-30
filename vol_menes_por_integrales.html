@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Volúmenes por Integrales · Discos, Arandelas y Cascarones</title>
+<!-- Three.js & OrbitControls -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<!-- KaTeX Styles & Library -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --bd: #e2e8f0;
+  --tx: #0f172a;
+  --mu: #64748b;
+  --ac: #0284c7;
+  --ac-bg: #e0f2fe;
+  --inp: #f1f5f9;
+  --pk: #be185d;
+  --pk-bg: #fce7f3;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #020617;
+    --card: #0f172a;
+    --bd: #1e293b;
+    --tx: #e2e8f0;
+    --mu: #94a3b8;
+    --ac: #38bdf8;
+    --ac-bg: #0369a1;
+    --inp: #020617;
+    --pk: #f472b6;
+    --pk-bg: #831843;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #020617;
+  --card: #0f172a;
+  --bd: #1e293b;
+  --tx: #e2e8f0;
+  --mu: #94a3b8;
+  --ac: #38bdf8;
+  --ac-bg: #0369a1;
+  --inp: #020617;
+  --pk: #f472b6;
+  --pk-bg: #831843;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bd);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+h1 { font-size: 17px; margin: 0; font-weight: 700; }
+h1 small { display: block; font-weight: 400; color: var(--mu); font-size: 12px; }
+button, select, input { font: inherit; color: var(--tx); }
+nav {
+  display: flex;
+  gap: 4px;
+  background: var(--inp);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+}
+nav button {
+  border: 0;
+  background: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--mu);
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+nav button.on { background: var(--ac); color: #fff; }
+
+/* LAYOUT PRINCIPAL: 2 Columnas alineadas */
+main {
+  display: grid;
+  grid-template-columns: minmax(340px, 1fr) minmax(420px, 1.1fr);
+  gap: 16px;
+  padding: 16px;
+  max-width: 1440px;
+  margin: auto;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  main { grid-template-columns: 1fr; }
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Panel Derecho Fijo (Sticky Viewer) */
+.right-panel {
+  position: sticky;
+  top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: calc(100vh - 86px);
+  max-height: 860px;
+}
+@media (max-width: 960px) {
+  .right-panel {
+    position: relative;
+    top: 0;
+    height: 520px;
+  }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.card h2 { font-size: 15px; margin: 0 0 8px; font-weight: 600; }
+.mu { color: var(--mu); font-size: 12px; }
+
+.f {
+  font-family: ui-monospace, Menlo, monospace;
+  background: var(--inp);
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  overflow-x: auto;
+  font-size: 13px;
+}
+details summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--ac); }
+details p, details li { font-size: 13px; margin: 6px 0; }
+
+label { display: block; font-size: 12px; color: var(--mu); margin-top: 10px; font-weight: 500; }
+select, input[type=text], input[type=number] {
+  width: 100%;
+  background: var(--inp);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 3px;
+}
+input[type=range] { width: 100%; accent-color: var(--ac); cursor: pointer; }
+
+.row { display: flex; justify-content: space-between; align-items: center; }
+.row b { font-family: ui-monospace, monospace; color: var(--ac); }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--inp);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+}
+.seg button {
+  border: 0;
+  background: none;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--mu);
+  font-size: 12px;
+  font-weight: 600;
+}
+.seg button.on { background: var(--ac); color: #fff; }
+
+.chk { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--tx); margin-top: 8px; cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chips button {
+  border: 1px solid var(--bd);
+  background: var(--inp);
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--mu);
+  transition: all 0.15s ease;
+}
+.chips button.on { background: var(--ac); border-color: var(--ac); color: #fff; font-weight: 600; }
+
+ol.st { list-style: none; counter-reset: s; padding: 0; margin: 8px 0 0; }
+ol.st li {
+  counter-increment: s;
+  position: relative;
+  padding: 6px 0 6px 30px;
+  border-top: 1px dashed var(--bd);
+  font-size: 13px;
+  line-height: 1.6;
+}
+ol.st li:before {
+  content: counter(s);
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--pk);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  display: grid;
+  place-items: center;
+}
+ol.st b { color: var(--pk); }
+
+.big { font: 700 18px ui-monospace, monospace; }
+
+/* Viewport 3D Canvas Container */
+#cv {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--bd);
+  background: #0b1220;
+}
+.tb {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid #cbd5e1;
+  padding: 4px;
+  border-radius: 10px;
+}
+.tb button {
+  border: 0;
+  color: #0f172a;
+  background: #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.tb button:hover { background: #cbd5e1; }
+
+#call {
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 10px 14px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.hid { display: none !important; }
+.katex-display { margin: 6px 0 !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Volúmenes por Integrales <small>Método de Discos, Arandelas y Cascarones Cilíndricos</small></h1>
+  <nav id="nav">
+    <button data-t="da" class="on">Discos y Arandelas</button>
+    <button data-t="cc">Cascarones Cilíndricos</button>
+    <button data-t="lab">Laboratorio</button>
+  </nav>
+</header>
+
+<main>
+  <!-- PANEL IZQUIERDO: Teoría, Selección, Pasos, Parámetros y Resultados -->
+  <div class="left-panel">
+    
+    <div class="card" id="theory"></div>
+
+    <div class="card">
+      <h2 id="exh">Ejemplos disponibles</h2>
+      <div class="chips" id="exl"></div>
+
+      <div id="lab" class="hid" style="margin-top: 10px;">
+        <label>Método del problema personalizado</label>
+        <select id="cm">
+          <option value="disc">Disco</option>
+          <option value="washer" selected>Arandela</option>
+          <option value="shell">Cascarón cilíndrico</option>
+        </select>
+
+        <div class="g2">
+          <div>
+            <label>Eje de giro</label>
+            <select id="co">
+              <option value="h">Horizontal y = k</option>
+              <option value="v">Vertical x = k</option>
+            </select>
+          </div>
+          <div>
+            <label>Constante k</label>
+            <input type="number" id="ck" value="0" step="0.5">
+          </div>
+          <div>
+            <label id="l1">r_ext</label>
+            <input type="text" id="c1" value="sqrt(x)">
+          </div>
+          <div>
+            <label id="l2">r_int</label>
+            <input type="text" id="c2" value="x^2">
+          </div>
+          <div id="w3">
+            <label>Altura f(x)</label>
+            <input type="text" id="c3" value="x">
+          </div>
+          <div></div>
+          <div>
+            <label>Límite a</label>
+            <input type="number" id="ca" value="0" step="0.5">
+          </div>
+          <div>
+            <label>Límite b</label>
+            <input type="number" id="cb" value="1" step="0.5">
+          </div>
+        </div>
+        <div class="mu" style="margin-top:6px;">Usa variable x (o y). Funciones: sqrt, cbrt, sin, cos, tan, exp, ln, abs, pi, e, ^.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <h2 id="sth">Construcción de la integral</h2>
+        <span class="mu" id="ref"></span>
+      </div>
+      <div class="mu" id="stm"></div>
+      <ol class="st" id="steps"></ol>
+    </div>
+
+    <div class="card">
+      <h2>Parámetros de la visualización</h2>
+      <label style="margin-top:0">Elementos diferenciales</label>
+      <div class="seg">
+        <button id="m-single">Elemento único</button>
+        <button id="m-multiple" class="on">Aproximación (n)</button>
+      </div>
+
+      <label><span class="row"><span>Particiones n</span><b id="nv">8</b></span></label>
+      <input type="range" id="n" min="1" max="40" value="8">
+      <div class="chips">
+        <button data-n="5">n=5</button>
+        <button data-n="10">n=10</button>
+        <button data-n="20">n=20</button>
+        <button data-n="40">n=40</button>
+      </div>
+
+      <label><span class="row"><span id="xl">Posición del elemento (x₀)</span><b id="xv">0.000</b></span></label>
+      <input type="range" id="x0" min="0" max="1" step="0.01" value="0">
+
+      <label><span class="row"><span>Ángulo de revolución θ</span><b id="tv">360°</b></span></label>
+      <input type="range" id="th" min="10" max="360" step="5" value="360">
+
+      <label><span class="row"><span>Opacidad del sólido</span><b id="ov">0.30</b></span></label>
+      <input type="range" id="op" min="0" max="1" step="0.05" value="0.3">
+
+      <div class="g2">
+        <label class="chk"><input type="checkbox" id="cs" checked>Sólido envolvente</label>
+        <label class="chk"><input type="checkbox" id="cr" checked>Región plana</label>
+        <label class="chk"><input type="checkbox" id="cx" checked>Ejes coordenados</label>
+        <label class="chk"><input type="checkbox" id="cl" checked>Lienzo claro</label>
+        <label class="chk hid" id="ntw"><input type="checkbox" id="nt">Cascarones opacos</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Resultados</h2>
+      <div class="g2">
+        <div class="f">
+          <span class="mu">Volumen exacto (Integral)</span>
+          <div class="big" id="ve" style="color:var(--ac)"></div>
+          <span class="mu" id="vep"></span>
+        </div>
+        <div class="f">
+          <span class="mu">Suma de Riemann (Vₙ)</span>
+          <div class="big" id="va" style="color:var(--pk)"></div>
+          <span class="mu" id="vap"></span>
+        </div>
+      </div>
+      <div class="row f" style="margin-top:8px;"><span class="mu">Error relativo</span><b id="er"></b></div>
+      <div class="row f"><span class="mu">Valor exacto (Teórico)</span><b id="xt" style="color:var(--tx)"></b></div>
+    </div>
+
+  </div>
+
+  <!-- PANEL DERECHO: Visor 3D y Detalle Fijo en pantalla -->
+  <div class="right-panel">
+    <div id="cv">
+      <div class="tb">
+        <button data-v="iso">3D</button>
+        <button data-v="front">Frontal</button>
+        <button data-v="top">Superior</button>
+      </div>
+    </div>
+    <div id="call"></div>
+  </div>
+</main>
+
+<script>
+/* ============ HELPER LATEX (KaTeX) ============ */
+function ktex(mathStr, display = false) {
+  if (!window.katex) return mathStr;
+  try {
+    return katex.renderToString(mathStr, { displayMode: display, throwOnError: false });
+  } catch (e) {
+    return mathStr;
+  }
+}
+
+function toTex(s) {
+  if (s === null || s === undefined) return '';
+  let str = String(s);
+  str = str.replace(/sqrt\(([^)]+)\)/g, '\\sqrt{$1}');
+  str = str.replace(/cbrt\(([^)]+)\)/g, '\\sqrt[3]{$1}');
+  str = str.replace(/exp\(([^)]+)\)/g, 'e^{$1}');
+  str = str.replace(/sin\(([^)]+)\)/g, '\\sin($1)');
+  str = str.replace(/cos\(([^)]+)\)/g, '\\cos($1)');
+  str = str.replace(/tan\(([^)]+)\)/g, '\\tan($1)');
+  str = str.replace(/pi/g, '\\pi');
+  str = str.replace(/\*/g, '\\cdot ');
+  return str;
+}
+
+/* ============ DATOS Y EJEMPLOS ============ */
+const PI = Math.PI, R3 = Math.sqrt(3);
+const SL = (ref,t,st,o,k,sg,ro,ri,a,b,ex,xt,n=8) => ({m:ri==='0'?'disc':'washer',ref,t,st,o,k,sg,ro,ri,a,b,ex,xt,n});
+const SH = (ref,t,st,o,k,sg,rad,lo,hi,a,b,ex,xt,n=8) => ({m:'shell',ref,t,st,o,k,sg,rad,lo,hi,a,b,ex,xt,n});
+const XS = (ref,t,st,shape,dims,A,poly,a,b,ex,xt,n=8) => ({m:'xsec',ref,t,st,shape,dims,A,poly,a,b,ex,xt,n,o:'h',k:0,sg:1});
+
+const DATA = {
+'da': [
+  SL('[1] Discos','Esfera de radio r = 1','Región bajo y = \\sqrt{1-x^2}, -1 \\le x \\le 1, girada alrededor del eje x.','h',0,1,'sqrt(1-x^2)','0',-1,1,4*PI/3,'4\\pi/3 \\approx 4.18879',5),
+  SL('[2] Discos','y = \\sqrt{x} alrededor del eje x','Región bajo y = \\sqrt{x}, de x = 0 a x = 1, girada alrededor del eje x.','h',0,1,'sqrt(x)','0',0,1,PI/2,'\\pi/2'),
+  SL('[3] Discos','y = x^3, y = 8, x = 0 alrededor del eje y','Región entre y = x^3, y = 8 y x = 0, girada alrededor del eje y. Integramos respecto a y (x = \\sqrt[3]{y}).','v',0,1,'cbrt(y)','0',0,8,96*PI/5,'96\\pi/5'),
+  SL('[4] Arandelas','y = x y y = x^2 alrededor del eje x','Región entre y = x y y = x^2, girada alrededor del eje x.','h',0,1,'x','x^2',0,1,2*PI/15,'2\\pi/15'),
+  SL('[5] Arandelas','Región entre y = x y y = x^2 alrededor de y = 2','La región entre y = x y y = x^2 gira alrededor de la recta y = 2.','h',2,-1,'2-x^2','2-x',0,1,8*PI/15,'8\\pi/15'),
+  SL('[6] Arandelas','Región entre y = x y y = x^2 alrededor de x = -1','La región entre y = x y y = x^2 gira alrededor de la recta x = -1. Cortes horizontales.','v',-1,1,'1+sqrt(y)','1+y',0,1,PI/2,'\\pi/2'),
+  XS('[7] Secciones','Base circular, secciones triángulos equiláteros','Base circular x^2 + y^2 = 1. Secciones perpendiculares al eje x son triángulos equiláteros.','triángulo equilátero',[['Base AB','2\\sqrt{1-x^2}'],['Altura','\\sqrt{3}\\sqrt{1-x^2}']],'\\frac{\\sqrt{3}}{4} b^2 = \\sqrt{3}(1-x^2)',x=>{const s=Math.sqrt(Math.max(0,1-x*x));return[[-s,0],[s,0],[0,R3*s]]},-1,1,0,'4\\sqrt{3}/3 \\approx 2.3094'),
+  XS('[8] Secciones','Pirámide de base cuadrada (L = 3, h = 4)','Vértice en el origen, eje central a lo largo del eje x, base cuadrada de lado L = 3 y altura h = 4.','cuadrado',[['Lado s','\\frac{3x}{4}']],'s^2 = \\frac{9x^2}{16}',x=>{const s=3*x/4;return[[-s/2,-s/2],[s/2,-s/2],[s/2,s/2],[-s/2,s/2]]},0,4,0,'L^2h/3 = 12'),
+  XS('[9] Secciones','Cuña de un cilindro (r = 4, 30°)','Cuña cortada de un cilindro de radio 4 por dos planos a 30°. Base semicírculo y = \\sqrt{16-x^2}.','triángulo rectángulo',[['Base AB','\\sqrt{16-x^2}'],['Altura BC','\\frac{\\sqrt{16-x^2}}{\\sqrt{3}}']],'\\frac{1}{2} \\cdot AB \\cdot BC = \\frac{16-x^2}{2\\sqrt{3}}',x=>{const y=Math.sqrt(Math.max(0,16-x*x));return[[0,0],[y,0],[y,y/R3]]},-4,4,0,'128/(3\\sqrt{3}) \\approx 24.6341')
+],
+'cc': [
+  SH('[1] Cascarones','y = 2x^2 - x^3 alrededor del eje y','Región bajo y = 2x^2 - x^3 y y = 0, girada alrededor del eje y.','v',0,1,'x','0','2*x^2-x^3',0,2,16*PI/5,'16\\pi/5'),
+  SH('[2] Cascarones','y = x y y = x^2 alrededor del eje y','Región entre y = x y y = x^2, girada alrededor del eje y.','v',0,1,'x','x^2','x',0,1,PI/6,'\\pi/6'),
+  SH('[3] Cascarones','y = \\sqrt{x} alrededor del eje x (cascarones)','Región bajo y = \\sqrt{x} de 0 a 1, girada alrededor del eje x. Integramos respecto a y.','h',0,1,'y','y^2','1',0,1,PI/2,'\\pi/2'),
+  SH('[4] Cascarones','y = x - x^2 alrededor de x = 2','Región bajo y = x - x^2 y y = 0, girada alrededor de x = 2. Radio 2 - x.','v',2,-1,'2-x','0','x-x^2',0,1,PI/2,'\\pi/2')
+],
+'lab': [
+  SL('[Lab 1] Discos','y = 1 - x^2, y = 0 alrededor del eje x','Región entre y = 1 - x^2 y el eje x, girada alrededor del eje x.','h',0,1,'1-x^2','0',-1,1,16*PI/15,'16\\pi/15'),
+  SL('[Lab 2] Discos','y = \\sqrt{x-1}, y = 0, x = 5 alrededor del eje x','Región bajo y = \\sqrt{x-1} entre x = 1 y x = 5, girada alrededor del eje x.','h',0,1,'sqrt(x-1)','0',1,5,8*PI,'8\\pi'),
+  SL('[Lab 3] Discos','x = 2\\sqrt{y}, x = 0, y = 9 alrededor del eje y','Región entre x = 2\\sqrt{y}, x = 0 e y = 9, girada alrededor del eje y.','v',0,1,'2*sqrt(y)','0',0,9,162*PI,'162\\pi'),
+  SL('[Lab 4] Arandelas','y = x^3, y = x, x \\ge 0 alrededor del eje x','Región entre y = x^3 y y = x en el primer cuadrante, girada alrededor del eje x.','h',0,1,'x','x^3',0,1,4*PI/21,'4\\pi/21'),
+  SL('[Lab 5] Arandelas','y = x^2, x = y^2 alrededor de y = 1','Región entre y = x^2 y x = y^2, girada alrededor de la recta y = 1.','h',1,-1,'1-x^2','1-sqrt(x)',0,1,11*PI/30,'11\\pi/30'),
+  SL('[Lab 6] Arandelas','y = x^3, y = 0, x = 1 alrededor de x = 2','Región bajo y = x^3 entre x = 0 y x = 1, girada alrededor de x = 2.','v',2,-1,'2-cbrt(y)','1',0,1,3*PI/5,'3\\pi/5'),
+  SH('[Lab 7] Cascarones','y = \\sqrt[3]{x}, y = 0, x = 1 alrededor del eje y','Región bajo y = \\sqrt[3]{x} de 0 a 1, girada alrededor del eje y.','v',0,1,'x','0','cbrt(x)',0,1,6*PI/7,'6\\pi/7'),
+  SH('[Lab 8] Cascarones','y = x^3, y = 0, x = 1, x = 2 alrededor del eje y','Región bajo y = x^3 entre x = 1 y x = 2, girada alrededor del eje y.','v',0,1,'x','0','x^3',1,2,62*PI/5,'62\\pi/5'),
+  SH('[Lab 9] Cascarones','y = e^{-x^2}, x = 0, x = 1 alrededor del eje y','Región bajo y = e^{-x^2} de 0 a 1, girada alrededor del eje y.','v',0,1,'x','0','exp(-(x^2))',0,1,PI*(1-1/Math.E),'\\pi(1 - 1/e) \\approx 1.9858'),
+  SH('[Lab 10] Cascarones','y = 4x - x^2, y = x alrededor del eje y','Región entre y = x y y = 4x - x^2, girada alrededor del eje y.','v',0,1,'x','x','4*x-x^2',0,3,27*PI/2,'27\\pi/2'),
+  SH('[Lab 11] Cascarones','y = \\sin(x^2), 0 \\le x \\le \\sqrt{\\pi} alrededor del eje y','Región bajo y = \\sin(x^2) de 0 a \\sqrt{\\pi}, girada alrededor del eje y.','v',0,1,'x','0','sin(x^2)',0,Math.sqrt(PI),2*PI,'2\\pi'),
+  SH('[Lab 12] Cascarones','y = x^4, y = 0, x = 1 alrededor de x = 2','Región bajo y = x^4 de 0 a 1, girada alrededor de x = 2. Radio 2 - x.','v',2,-1,'2-x','0','x^4',0,1,7*PI/15,'7\\pi/15'),
+  SH('[Lab 13] Cascarones','y = \\sqrt{x}, y = 0, x = 1 alrededor de x = 1','Región bajo y = \\sqrt{x} de 0 a 1, girada alrededor de x = 1. Radio 1 - x.','v',1,-1,'1-x','0','sqrt(x)',0,1,8*PI/15,'8\\pi/15'),
+  SH('[Lab 14] Cascarones','xy = 1, x = 0, y = 1, y = 3 alrededor del eje x','Región entre x = 0 y x = 1/y para 1 \\le y \\le 3, girada alrededor del eje x.','h',0,1,'y','0','1/y',1,3,4*PI,'4\\pi'),
+  SH('[Lab 15] Cascarones','y = \\sqrt{x}, x = 0, y = 2 alrededor del eje x','Región entre x = 0 y x = y^2 con 0 \\le y \\le 2, girada alrededor del eje x.','h',0,1,'y','0','y^2',0,2,8*PI,'8\\pi'),
+  XS('[Lab 16] Secciones','Base circular (r = 2), secciones cuadradas','Base circular de radio 2. Secciones perpendiculares al eje x son cuadrados.','cuadrado',[['Lado','2\\sqrt{4-x^2}']],'A(x) = 4(4-x^2)',x=>{const s=Math.sqrt(Math.max(0,4-x*x));return[[-s,0],[s,0],[s,2*s],[-s,2*s]]},-2,2,0,'128/3 \\approx 42.667'),
+  XS('[Lab 17] Secciones','Base elíptica 9x^2 + 4y^2 = 36, triáng. isósceles','Base elíptica 9x^2 + 4y^2 = 36. Secciones: triángulos rectángulos isósceles.','triángulo rectángulo isósceles',[['Hipotenusa','6\\sqrt{1-x^2/4}'],['Altura','3\\sqrt{1-x^2/4}']],'A(x) = 9(1-x^2/4)',x=>{const Y=3*Math.sqrt(Math.max(0,1-x*x/4));return[[-Y,0],[Y,0],[0,Y]]},-2,2,0,'24'),
+  XS('[Lab 18] Secciones','Base 1 - x^2, triángulos isósceles','Base: región bajo y = 1 - x^2. Secciones: triángulos isósceles con altura = base.','triángulo isósceles',[['Base','1-x^2'],['Altura','1-x^2']],'A(x) = \\frac{1}{2}(1-x^2)^2',x=>{const b=1-x*x;return[[0,0],[b,0],[b/2,b]]},-1,1,0,'8/15')
+]};
+
+DATA['da'].concat(DATA.lab).forEach(it=>{
+  if(it.m==='xsec'){
+    const f=x=>area(it.poly(x));
+    it.ex=simp(f,it.a,it.b);
+  }
+});
+
+const THEORY = {
+'da': `<details open><summary>Teoría · Método de Discos y Arandelas</summary>
+<p>Si un sólido $S$ se encuentra entre $x = a$ y $x = b$, y el área de su sección transversal en $x$ es $A(x)$: </p>
+<div>${ktex('V = \\int_{a}^{b} A(x)\\,dx', true)}</div>
+<p><b>Sólidos de Revolución:</b></p>
+<ul>
+  <li><b>Disco:</b> $A(x) = \\pi [r(x)]^2 \\implies$ ${ktex('V = \\pi \\int_{a}^{b} [r(x)]^2\\,dx')}</li>
+  <li><b>Arandela:</b> $A(x) = \\pi [r_{\\text{ext}}(x)]^2 - \\pi [r_{\\text{int}}(x)]^2 \\implies$ ${ktex('V = \\pi \\int_{a}^{b} \\left( [r_{\\text{ext}}]^2 - [r_{\\text{int}}]^2 \\right) dx')}</li>
+</ul></details>`,
+
+'cc': `<details open><summary>Teoría · Método de Cascarones Cilíndricos</summary>
+<p>Un cascarón de radio promedio $r$, altura $h$ y espesor $\\Delta x$ tiene un volumen diferencial:</p>
+<div>${ktex('dV = 2\\pi \\cdot r \\cdot h \\cdot dx', true)}</div>
+<p>Al girar una región alrededor de un eje paralelo al eje $y$, integrando respecto a $x$:</p>
+<div>${ktex('V = 2\\pi \\int_{a}^{b} \\text{(radio)} \\cdot \\text{(altura)}\\,dx = 2\\pi \\int_{a}^{b} x f(x)\\,dx', true)}</div>
+<p><b>Ventaja:</b> Evita despejar variables complejas $x(y)$ en funciones de grado superior.</p></details>`,
+
+'lab': `<details open><summary>Laboratorio · Problemas Propuestos y Personalizados</summary>
+<p>Selecciona un problema numérico o utiliza la opción <b>Personalizado ✎</b> para ingresar funciones en tiempo real.</p></details>`
+};
+
+/* ============ PARSER DE FUNCIONES ============ */
+const MF = {sqrt:'Math.sqrt',cbrt:'Math.cbrt',sin:'Math.sin',cos:'Math.cos',tan:'Math.tan',exp:'Math.exp',ln:'Math.log',abs:'Math.abs',pi:'Math.PI',e:'Math.E',x:'s',y:'s',t:'s'};
+function cp(src){
+  const s=String(src).toLowerCase();let ok=/^[0-9a-z+\-*/^().,\s]*$/.test(s);
+  const j=s.replace(/[a-z]+/g,w=>{if(MF[w])return MF[w];ok=false;return w}).replace(/\^/g,'**');
+  if(!ok)return()=>0;
+  try{const f=new Function('s','return ('+j+')');return v=>{const r=f(v);return isFinite(r)?r:0}}catch(e){return()=>0}
+}
+function simp(f,a,b,N=600){if(b<=a)return 0;const h=(b-a)/N;let s=f(a)+f(b);for(let i=1;i<N;i++)s+=(i%2?4:2)*f(a+i*h);return s*h/3}
+function area(p){let s=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];s+=p[i][0]*q[1]-q[0]*p[i][1]}return Math.abs(s)/2}
+
+const isSl = it => it.m==='disc' || it.m==='washer';
+const vr = it => it.m==='xsec'?'x':isSl(it)?(it.o==='h'?'x':'y'):(it.o==='v'?'x':'y');
+const axT = it => it.o==='h'?(it.k?`y = ${it.k}`:'eje x'):(it.k?`x = ${it.k}`:'eje y');
+function fns(it){
+  if(it.m==='xsec')return{poly:it.poly};
+  if(isSl(it))return{ro:cp(it.ro),ri:cp(it.ri)};
+  return{rad:cp(it.rad),lo:cp(it.lo),hi:cp(it.hi)};
+}
+
+/* ============ PASOS CON KATEX ============ */
+function steps(it, vE) {
+  const v = vr(it), a = +it.a.toFixed(4), b = +it.b.toFixed(4), L = [];
+  const resTex = ktex(`V = ${vE.toFixed(5)}${it.xt && it.xt!=='—' ? ` = ${it.xt}` : ''}`);
+
+  if (it.m === 'xsec') {
+    L.push(['Sólido', it.st]);
+    L.push(['Sección transversal', `Planos $P_${v}$ perpendiculares. Secciones de tipo <b>${it.shape}</b>.`]);
+    L.push(['Dimensiones', it.dims.map(d => `${d[0]}: $${toTex(d[1])}$`).join(' · ')]);
+    L.push(['Área $A(x)$', ktex(`A(${v}) = ${toTex(it.A)}`)]);
+    L.push(['Elemento $dV$', ktex(`dV = A(${v})\\,d${v}`)]);
+    L.push(['Integral', ktex(`V = \\int_{${a}}^{${b}} A(${v})\\,d${v}`)]);
+  } else if (isSl(it)) {
+    const w = it.m === 'washer';
+    L.push(['Región', it.st]);
+    L.push(['Eje de giro', `Alrededor de $${axT(it)}$. Elemento diferencial en $d${v}$.`]);
+    L.push([w ? 'Radios' : 'Radio', w ? ktex(`r_{\\text{ext}} = ${toTex(it.ro)},\\quad r_{\\text{int}} = ${toTex(it.ri)}`) : ktex(`r = ${toTex(it.ro)}`)]);
+    L.push(['Área $A(' + v + ')$', w ? ktex(`A(${v}) = \\pi \\left([${toTex(it.ro)}]^2 - [${toTex(it.ri)}]^2\\right)`) : ktex(`A(${v}) = \\pi [${toTex(it.ro)}]^2`)]);
+    L.push(['Elemento $dV$', ktex(`dV = A(${v})\\,d${v}`)]);
+    L.push(['Integral', ktex(`V = \\pi \\int_{${a}}^{${b}} ${w ? `\\left([${toTex(it.ro)}]^2 - [${toTex(it.ri)}]^2\\right)` : `[${toTex(it.ro)}]^2`}\\,d${v}`)]);
+  } else {
+    L.push(['Región', it.st]);
+    L.push(['Eje de giro', `Alrededor de $${axT(it)}$. Cascarones de radio en $d${v}$.`]);
+    L.push(['Radio y Altura', ktex(`r = ${toTex(it.rad)},\\quad h = ${toTex(it.hi)}${it.lo==='0'?'':` - (${toTex(it.lo)})`}`)]);
+    L.push(['Elemento $dV$', ktex(`dV = 2\\pi \\cdot r \\cdot h\\,d${v} = 2\\pi (${toTex(it.rad)}) (${toTex(it.hi)}${it.lo==='0'?'':` - ${toTex(it.lo)}`})\\,d${v}`)]);
+    L.push(['Integral', ktex(`V = 2\\pi \\int_{${a}}^{${b}} (${toTex(it.rad)}) (${toTex(it.hi)}${it.lo==='0'?'':` - ${toTex(it.lo)}`})\\,d${v}`)]);
+  }
+  L.push(['Resultado', resTex]);
+
+  return L.map(([k, t]) => `<li><b>${k}:</b> ${t}</li>`).join('');
+}
+
+/* ============ RENDERIZADO THREE.JS ============ */
+let scene, cam, ren, ctl, grp, BB = new THREE.Box3();
+const cv = document.getElementById('cv');
+
+function initThree() {
+  scene = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(40, cv.clientWidth / cv.clientHeight, 0.05, 1000);
+  ren = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  ren.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  ren.setSize(cv.clientWidth, cv.clientHeight);
+  cv.appendChild(ren.domElement);
+
+  ctl = new THREE.OrbitControls(cam, ren.domElement);
+  ctl.enableDamping = true;
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x94a3b8, 0.75));
+  const d1 = new THREE.DirectionalLight(0xffffff, 0.7); d1.position.set(8, 12, 10); scene.add(d1);
+  const d2 = new THREE.DirectionalLight(0xffffff, 0.25); d2.position.set(-8, -6, -8); scene.add(d2);
+
+  grp = new THREE.Group(); scene.add(grp);
+
+  // ResizeObserver para ajuste perfecto del canvas sin saltos
+  const resizeObserver = new ResizeObserver(() => {
+    const w = cv.clientWidth;
+    const h = cv.clientHeight;
+    if (w && h && ren && cam) {
+      cam.aspect = w / h;
+      cam.updateProjectionMatrix();
+      ren.setSize(w, h);
+    }
+  });
+  resizeObserver.observe(cv);
+
+  (function loop(){
+    requestAnimationFrame(loop);
+    ctl.update();
+    ren.render(scene, cam);
+  })();
+}
+
+const P = (ax, r, t, it) => it.o === 'h' ? [ax, it.k + it.sg * r * Math.cos(t), r * Math.sin(t)] : [it.k + it.sg * r * Math.cos(t), ax, r * Math.sin(t)];
+function mk(pos, idx) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  if (idx) g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+function revolve(pts, it, th, segs = 96) {
+  const pos = [], idx = [], m = pts.length;
+  for (let j = 0; j <= segs; j++) for (const [ax, r] of pts) pos.push(...P(ax, r, th * j / segs, it));
+  for (let j = 0; j < segs; j++) for (let i = 0; i < m - 1; i++) {
+    const a = j * m + i, b = a + 1, c = a + m, d = c + 1;
+    idx.push(a, c, b, b, c, d);
+  }
+  return mk(pos, idx);
+}
+function strip(pairs, it, t) {
+  const pos = [], idx = [];
+  pairs.forEach(([p, q], i) => {
+    pos.push(...P(p[0], p[1], t, it), ...P(q[0], q[1], t, it));
+    if (i < pairs.length - 1) { const a = 2 * i; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+  });
+  return mk(pos, idx);
+}
+function prism(poly, x1, x2) {
+  const pos = [], m = poly.length, V = (x, p) => [x, p[0], p[1]];
+  for (let i = 0; i < m; i++) {
+    const p = poly[i], q = poly[(i + 1) % m];
+    pos.push(...V(x1, p), ...V(x2, p), ...V(x2, q), ...V(x1, p), ...V(x2, q), ...V(x1, q));
+  }
+  for (let i = 1; i < m - 1; i++) pos.push(...V(x1, poly[0]), ...V(x1, poly[i]), ...V(x1, poly[i + 1]), ...V(x2, poly[0]), ...V(x2, poly[i + 1]), ...V(x2, poly[i]));
+  return mk(pos);
+}
+function rim(ax, r, th, it, color) {
+  if (r < 0.002) return null;
+  const pts = [];
+  for (let j = 0; j <= 128; j++) pts.push(new THREE.Vector3(...P(ax, r, th * j / 128, it)));
+  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color }));
+}
+const mat = (c, op, o = {}) => new THREE.MeshPhongMaterial(Object.assign({ color: c, transparent: op < 1, opacity: op, side: THREE.DoubleSide, shininess: 70, specular: 0x555555, depthWrite: op >= 0.9 }, o));
+const add = o => { o && grp.add(o); };
+const addG = (l, m) => l.forEach(g => g && grp.add(new THREE.Mesh(g, m)));
+const lineP = (pts, c) => new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(...p))), new THREE.LineBasicMaterial({ color: c }));
+let SCw = 0.01;
+function bar(p, q, c, w = SCw) {
+  const a = new THREE.Vector3(...p), b = new THREE.Vector3(...q), d = b.clone().sub(a), L = d.length(); if (L < 1e-6) return;
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(w, w, L, 10), new THREE.MeshBasicMaterial({ color: c }));
+  m.position.copy(a.clone().add(b).multiplyScalar(0.5)); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); grp.add(m);
+}
+const C = { sol: 0x38bdf8, solRim: 0x0284c7, el: 0xec4899, elHi: 0xf43f5e, elRim: 0xbe123c, rout: 0xf59e0b, rin: 0x2563eb, alt: 0x16a34a, thk: 0xbe123c };
+
+/* ============ ESTADO Y RECONSTRUCCIÓN ============ */
+const S = { sec: 'da', i: 0, mode: 'multiple', n: 8, x0: 0, th: 360, op: 0.3 };
+let CUR = null;
+
+function custom() {
+  const m = document.getElementById('cm').value, o = document.getElementById('co').value;
+  return m === 'shell' ? SH('Personalizado', 'Problema personalizado', 'Región personalizada.', o, +document.getElementById('ck').value || 0, 1, document.getElementById('c1').value, document.getElementById('c2').value, document.getElementById('c3').value, +document.getElementById('ca').value || 0, +document.getElementById('cb').value || 1, 0, '—')
+                       : SL('Personalizado', 'Problema personalizado', 'Región personalizada.', o, +document.getElementById('ck').value || 0, 1, document.getElementById('c1').value, m === 'disc' ? '0' : document.getElementById('c2').value, +document.getElementById('ca').value || 0, +document.getElementById('cb').value || 1, 0, '—');
+}
+
+function rebuild() {
+  while (grp.children.length) { const o = grp.children[0]; grp.remove(o); o.geometry && o.geometry.dispose(); }
+  const it = CUR, F = fns(it), book = document.getElementById('cl').checked;
+  scene.background = new THREE.Color(book ? 0xffffff : 0x0b1220);
+  if (it.b <= it.a) it.b = it.a + 1;
+  const th = S.th * PI / 180, full = S.th >= 359, a = it.a, b = it.b, n = S.n, dx = (b - a) / n, N = 120;
+  const xs = Math.min(Math.max(S.x0, a), b - dx), sm = xs + dx / 2; SCw = Math.max(b - a, 1) * 0.007;
+  const sx = []; for (let i = 0; i <= N; i++) sx.push(a + (b - a) * i / N);
+  const solM = mat(C.sol, S.op, { depthWrite: false }); let vE = 0, vA = 0, info = '';
+  const showS = document.getElementById('cs').checked, multi = S.mode === 'multiple';
+
+  if (isSl(it)) {
+    const rr = s => { const A = Math.abs(F.ro(s)), B = Math.abs(F.ri(s)); return [Math.max(A, B), Math.min(A, B)]; };
+    if (showS) {
+      const w = it.m === 'washer';
+      addG([revolve(sx.map(s => [s, rr(s)[0]]), it, th), w ? revolve(sx.map(s => [s, rr(s)[1]]), it, th) : null,
+            revolve([[a, rr(a)[1]], [a, rr(a)[0]]], it, th), revolve([[b, rr(b)[1]], [b, rr(b)[0]]], it, th)], solM);
+      if (!full) [0, th].forEach(t => addG([strip(sx.map(s => [[s, rr(s)[1]], [s, rr(s)[0]]]), it, t)], solM));
+      [a, b].forEach(s => { add(rim(s, rr(s)[0], th, it, C.solRim)); add(rim(s, rr(s)[1], th, it, C.solRim)); });
+    }
+    const slab = (s1, s2, hi) => {
+      const m = (s1 + s2) / 2, [R, r] = rr(m); if (R <= r + 0.001) return;
+      const op = hi ? 0.9 : (multi ? 0.45 : 0); if (!op) return;
+      const mm = mat(hi ? C.elHi : C.el, op, { depthWrite: true });
+      addG([revolve([[s1, R], [s2, R]], it, th), r > 0.001 ? revolve([[s1, r], [s2, r]], it, th) : null, revolve([[s1, r], [s1, R]], it, th), revolve([[s2, r], [s2, R]], it, th)], mm);
+      if (!full) [0, th].forEach(t => addG([strip([[[s1, r], [s1, R]], [[s2, r], [s2, R]]], it, t)], mm));
+      [s1, s2].forEach(s => { add(rim(s, R, th, it, C.elRim)); add(rim(s, r, th, it, C.elRim)); });
+      if (hi) { if (r > 0.001) bar(P(m, 0, 0, it), P(m, r, 0, it), C.rin); bar(P(m, r, 0, it), P(m, R, 0, it), C.rout); bar(P(s1, R, 0, it), P(s2, R, 0, it), C.thk, SCw * 1.3); }
+    };
+    for (let i = 0; i < n; i++) { const s1 = a + i * dx, [R, r] = rr(s1 + dx / 2); vA += PI * (R * R - r * r) * dx; if (multi) slab(s1, s1 + dx, false); }
+    slab(xs, xs + dx, true);
+    vE = simp(s => { const [R, r] = rr(s); return PI * (R * R - r * r); }, a, b);
+    const [R, r] = rr(sm), v = vr(it);
+    info = it.m === 'washer'
+      ? `${ktex(`r_{\\text{ext}} = ${R.toFixed(3)},\\quad r_{\\text{int}} = ${r.toFixed(3)},\\quad \\Delta ${v} = ${dx.toFixed(3)}`)}<br>${ktex(`A = \\pi(r_{\\text{ext}}^2 - r_{\\text{int}}^2) = ${(PI*(R*R-r*r)).toFixed(4)}`)}<br>${ktex(`dV = A \\cdot \\Delta ${v} = ${(PI*(R*R-r*r)*dx).toFixed(4)}`)}`
+      : `${ktex(`r = ${R.toFixed(3)},\\quad \\Delta ${v} = ${dx.toFixed(3)}`)}<br>${ktex(`A = \\pi r^2 = ${(PI*R*R).toFixed(4)}`)}<br>${ktex(`dV = A \\cdot \\Delta ${v} = ${(PI*R*R*dx).toFixed(4)}`)}`;
+    info = `<b>${it.m === 'washer' ? 'Arandela' : 'Disco'} en ${v}₀ = ${sm.toFixed(3)}</b><br>` + info;
+    if (document.getElementById('cr').checked) {
+      addG([strip(sx.map(s => [[s, rr(s)[1]], [s, rr(s)[0]]]), it, 0)], mat(0xfbbf24, 0.55, { depthWrite: false }));
+      add(lineP(sx.map(s => P(s, rr(s)[0], 0, it)), 0x92400e));
+      add(lineP(sx.map(s => P(s, rr(s)[1], 0, it)), 0x92400e));
+    }
+  } else if (it.m === 'shell') {
+    const lh = t => { const A = F.lo(t), B = F.hi(t); return [Math.min(A, B), Math.max(A, B)]; };
+    if (showS) {
+      addG([revolve(sx.map(t => [lh(t)[1], F.rad(t)]), it, th), revolve(sx.map(t => [lh(t)[0], F.rad(t)]), it, th),
+            F.rad(a) > 0.001 ? revolve([[lh(a)[0], F.rad(a)], [lh(a)[1], F.rad(a)]], it, th) : null, revolve([[lh(b)[0], F.rad(b)], [lh(b)[1], F.rad(b)]], it, th)], solM);
+      if (!full) [0, th].forEach(t0 => addG([strip(sx.map(t => [[lh(t)[0], F.rad(t)], [lh(t)[1], F.rad(t)]]), it, t0)], solM));
+      [a, b].forEach(t => { add(rim(lh(t)[1], F.rad(t), th, it, C.solRim)); add(rim(lh(t)[0], F.rad(t), th, it, C.solRim)); });
+    }
+    const shell = (t1, t2, hi) => {
+      const m = (t1 + t2) / 2, r1 = Math.min(F.rad(t1), F.rad(t2)), r2 = Math.max(F.rad(t1), F.rad(t2)), [L, H] = lh(m);
+      if (H - L < 0.001 || r2 <= 0) return;
+      const op = hi ? 0.92 : (multi ? (document.getElementById('nt').checked ? 1 : 0.5) : 0); if (!op) return;
+      const mm = mat(hi ? C.elHi : C.el, op, { depthWrite: true });
+      addG([revolve([[L, r2], [H, r2]], it, th), r1 > 0.001 ? revolve([[L, r1], [H, r1]], it, th) : null, revolve([[H, r1], [H, r2]], it, th), revolve([[L, r1], [L, r2]], it, th)], mm);
+      if (!full) [0, th].forEach(t0 => addG([strip([[[L, r1], [H, r1]], [[L, r2], [H, r2]]], it, t0)], mm));
+      add(rim(H, r2, th, it, C.elRim)); add(rim(H, r1, th, it, C.elRim)); add(rim(L, r2, th, it, C.elRim));
+      if (hi) { const rm = (r1 + r2) / 2; bar(P(L, 0, 0, it), P(L, rm, 0, it), C.rout); bar(P(L, rm, 0, it), P(H, rm, 0, it), C.alt); bar(P(H, r1, 0, it), P(H, r2, 0, it), C.thk, SCw * 1.3); }
+    };
+    for (let i = 0; i < n; i++) { const t1 = a + i * dx, m = t1 + dx / 2, [L, H] = lh(m); vA += 2 * PI * F.rad(m) * (H - L) * dx; if (multi) shell(t1, t1 + dx, false); }
+    shell(xs, xs + dx, true);
+    vE = simp(t => { const [L, H] = lh(t); return 2 * PI * F.rad(t) * (H - L); }, a, b);
+    const [L, H] = lh(sm), r = F.rad(sm), v = vr(it);
+    info = `<b>Cascarón en ${v}₀ = ${sm.toFixed(3)}</b><br>${ktex(`r = ${r.toFixed(3)},\\quad 2\\pi r = ${(2*PI*r).toFixed(3)},\\quad h = ${(H-L).toFixed(3)},\\quad \\Delta ${v} = ${dx.toFixed(3)}`)}<br>${ktex(`dV = 2\\pi r h \\cdot \\Delta ${v} = ${(2*PI*r*(H-L)*dx).toFixed(4)}`)}`;
+    if (document.getElementById('cr').checked) {
+      addG([strip(sx.map(t => [[lh(t)[0], F.rad(t)], [lh(t)[1], F.rad(t)]]), it, 0)], mat(0xfbbf24, 0.55, { depthWrite: false }));
+      add(lineP(sx.map(t => P(lh(t)[1], F.rad(t), 0, it)), 0x92400e));
+      add(lineP(sx.map(t => P(lh(t)[0], F.rad(t), 0, it)), 0x92400e));
+    }
+  } else {
+    const pl = x => F.poly(x), ok = p => area(p) > 1e-6;
+    if (showS) { const M = 70, d = (b - a) / M; for (let j = 0; j < M; j++) { const p = pl(a + (j + 0.5) * d); if (ok(p)) add(new THREE.Mesh(prism(p, a + j * d, a + (j + 1) * d), solM)); } }
+    const el = (x1, x2, hi) => {
+      const p = pl((x1 + x2) / 2); if (!ok(p)) return; const op = hi ? 0.9 : (multi ? 0.45 : 0); if (!op) return;
+      const g = prism(p, x1, x2); add(new THREE.Mesh(g, mat(hi ? C.elHi : C.el, op, { depthWrite: true })));
+      add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 20), new THREE.LineBasicMaterial({ color: C.elRim })));
+    };
+    for (let i = 0; i < n; i++) { const x1 = a + i * dx; vA += area(pl(x1 + dx / 2)) * dx; if (multi) el(x1, x1 + dx, false); }
+    el(xs, xs + dx, true);
+    vE = simp(x => area(pl(x)), a, b);
+    const Ax = area(pl(sm));
+    info = `<b>Sección (${it.shape}) en x₀ = ${sm.toFixed(3)}</b><br>${ktex(`A(x_0) = ${Ax.toFixed(4)},\\quad \\Delta x = ${dx.toFixed(3)}`)}<br>${ktex(`dV = A(x_0)\\,dx = ${(Ax*dx).toFixed(4)}`)}`;
+  }
+
+  BB.setFromObject(grp);
+  const sz = BB.getSize(new THREE.Vector3()), c = BB.getCenter(new THREE.Vector3()), M = Math.max(sz.x, sz.y, sz.z, 1);
+  if (document.getElementById('cx').checked) {
+    const L = M * 0.75;
+    [[0xdc2626, [c.x - L, 0, 0], [c.x + L, 0, 0]], [0x16a34a, [0, c.y - L, 0], [0, c.y + L, 0]], [0x2563eb, [0, 0, -L * 0.6], [0, 0, L * 0.6]]].forEach(([k, p, q]) => add(lineP([p, q], k)));
+    if (it.m !== 'xsec') it.o === 'h' ? bar([c.x - L, it.k, 0], [c.x + L, it.k, 0], 0x7c3aed, SCw * 0.8) : bar([it.k, c.y - L, 0], [it.k, c.y + L, 0], 0x7c3aed, SCw * 0.8);
+  }
+
+  document.getElementById('call').innerHTML = info;
+  document.getElementById('ntw').classList.toggle('hid', it.m !== 'shell');
+
+  document.getElementById('ve').innerHTML = ktex(vE.toFixed(4));
+  document.getElementById('vep').innerHTML = ktex(`\\approx ${(vE / PI).toFixed(4)}\\pi`);
+  document.getElementById('va').innerHTML = ktex(vA.toFixed(4));
+  document.getElementById('vap').innerHTML = ktex(`\\approx ${(vA / PI).toFixed(4)}\\pi`);
+  document.getElementById('er').textContent = (Math.abs(vE) > 1e-6 ? Math.abs(vE - vA) / Math.abs(vE) * 100 : 0).toFixed(3) + '%';
+  document.getElementById('xt').innerHTML = it.xt ? ktex(it.xt) : '—';
+  document.getElementById('steps').innerHTML = steps(it, vE);
+
+  CUR._c = c; CUR._M = M;
+}
+
+function fit(v) {
+  const c = CUR._c || new THREE.Vector3(), M = CUR._M || 5, D = M * 2.1;
+  ctl.target.copy(c);
+  if (v === 'front') cam.position.set(c.x, c.y, c.z + D);
+  else if (v === 'top') cam.position.set(c.x, c.y + D, c.z + 0.01);
+  else cam.position.set(c.x + D * 0.55, c.y + D * 0.4, c.z + D * 0.75);
+  ctl.update();
+}
+
+function sync(refit) {
+  if (S.sec === 'lab' && document.getElementById('exl').dataset.c === '1' && S.i === DATA.lab.length) { CUR = custom(); }
+  S.n = +document.getElementById('n').value;
+  S.x0 = +document.getElementById('x0').value;
+  S.th = +document.getElementById('th').value;
+  S.op = +document.getElementById('op').value;
+
+  document.getElementById('nv').textContent = S.n;
+  document.getElementById('xv').textContent = S.x0.toFixed(3);
+  document.getElementById('tv').textContent = S.th + '°';
+  document.getElementById('ov').textContent = S.op.toFixed(2);
+
+  const x = document.getElementById('x0');
+  x.min = CUR.a; x.max = CUR.b; x.step = (CUR.b - CUR.a) / 200;
+  document.getElementById('xl').textContent = `Posición (${vr(CUR)}₀)`;
+
+  rebuild();
+  if (refit) fit('iso');
+}
+
+function pick(i) {
+  S.i = i;
+  const list = DATA[S.sec], isC = S.sec === 'lab' && i === list.length;
+  document.querySelectorAll('#exl button').forEach((b, j) => b.classList.toggle('on', j === i));
+  document.getElementById('lab').classList.toggle('hid', !isC);
+  CUR = isC ? custom() : list[i];
+  if (isC) updLbl();
+
+  document.getElementById('sth').textContent = 'Construcción de la integral';
+  document.getElementById('ref').textContent = CUR.ref;
+  document.getElementById('stm').innerHTML = `<b>${CUR.t}.</b> ` + (isC ? 'Define las expresiones abajo.' : CUR.st);
+
+  document.getElementById('n').value = CUR.n;
+  document.getElementById('x0').value = CUR.a + (CUR.b - CUR.a) * 0.4;
+  sync(true);
+}
+
+function updLbl() {
+  const m = document.getElementById('cm').value;
+  document.getElementById('l1').textContent = m === 'shell' ? 'Radio r(t)' : 'r_ext';
+  document.getElementById('l2').textContent = m === 'shell' ? 'Altura inferior' : 'r_int';
+  document.getElementById('c2').parentElement.classList.toggle('hid', m === 'disc');
+  document.getElementById('w3').classList.toggle('hid', m !== 'shell');
+}
+
+function tab(t) {
+  S.sec = t;
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.getElementById('theory').innerHTML = THEORY[t];
+
+  const list = DATA[t], el = document.getElementById('exl');
+  el.innerHTML = ''; el.dataset.c = t === 'lab' ? '1' : '0';
+
+  list.forEach((it, i) => {
+    const b = document.createElement('button');
+    b.textContent = `${it.ref} · ${it.t.split(' ')[0]}`;
+    b.title = it.t;
+    b.onclick = () => pick(i);
+    el.appendChild(b);
+  });
+
+  if (t === 'lab') {
+    const b = document.createElement('button');
+    b.textContent = 'Personalizado ✎';
+    b.onclick = () => pick(list.length);
+    el.appendChild(b);
+  }
+
+  document.getElementById('exh').textContent = t === 'lab' ? 'Ejemplos del laboratorio' : t === 'da' ? 'Ejemplos de Discos y Arandelas' : 'Ejemplos de Cascarones Cilíndricos';
+  pick(0);
+}
+
+function setMode(m) {
+  S.mode = m;
+  document.getElementById('m-single').classList.toggle('on', m === 'single');
+  document.getElementById('m-multiple').classList.toggle('on', m === 'multiple');
+  if (CUR) rebuild();
+}
+
+/* EVENT LISTENERS */
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => tab(b.dataset.t));
+document.querySelectorAll('.tb button').forEach(b => b.onclick = () => fit(b.dataset.v));
+document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { document.getElementById('n').value = b.dataset.n; sync(false); });
+
+['n', 'x0', 'th', 'op', 'cs', 'cr', 'cx', 'cl', 'nt'].forEach(i => document.getElementById(i).addEventListener('input', () => sync(false)));
+['co', 'ck', 'c1', 'c2', 'c3', 'ca', 'cb'].forEach(i => document.getElementById(i).addEventListener('change', () => { CUR = custom(); sync(true); }));
+
+document.getElementById('cm').onchange = () => { updLbl(); CUR = custom(); sync(true); };
+document.getElementById('m-single').onclick = () => setMode('single');
+document.getElementById('m-multiple').onclick = () => setMode('multiple');
+
+/* INICIALIZACIÓN */
+window.onload = function() {
+  initThree();
+  setMode('multiple');
+  tab('da');
+};
+</script>
+</body>
+</html>
